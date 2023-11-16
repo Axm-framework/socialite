@@ -16,6 +16,11 @@ class Socialite
     protected static $tokens = [];
 
     /**
+     * @var string
+     */
+    protected string $providerName = '';
+
+    /**
      */
     private function __construct()
     {
@@ -42,8 +47,9 @@ class Socialite
      */
     public function getProvider(string $name): object
     {
+        $this->providerName = $name;
         $config = $this->getProviderConfig($name);
-        $provider = sprintf('Axm\\Socialite\\Provider\\%sProvider', $name);
+        $provider = sprintf('Axm\\Socialite\\Providers\\%sProvider', ucfirst($name));
 
         if (!class_exists($provider)) {
             throw new \InvalidArgumentException("Provider $provider not supported.");
@@ -56,10 +62,10 @@ class Socialite
      * @param string $provider
      * @return [type]
      */
-    public static function driver(string $provider)
+    public static function driver(string $provider): object
     {
         $instance = self::make();
-        $instance->getProvider($provider);
+        return $instance->getProvider($provider);
     }
 
     /**
@@ -76,7 +82,12 @@ class Socialite
      */
     public function openConfig(): array
     {
-        $config = require config()->load(__DIR__ . DIRECTORY_SEPARATOR . 'config.php');
-        return $config;
+        $file = __DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
+        if (!is_file($file)) {
+            throw new \InvalidArgumentException("The configuration file $file does not exist.");
+        }
+
+        $config = require($file);
+        return $config[$this->providerName];
     }
 }

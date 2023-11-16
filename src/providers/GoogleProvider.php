@@ -2,11 +2,15 @@
 
 namespace Axm\Socialite\Providers;
 
+use Axm\Socialite\MakesHttpRequests;
+
 /**
  * GoogleProvider - A provider for Google OAuth2 authentication.
  */
 class GoogleProvider
 {
+    use MakesHttpRequests;
+
     /**
      * Base URL for Google API.
      */
@@ -41,7 +45,6 @@ class GoogleProvider
 
     /**
      * Constructor.
-     *
      * @param array $config Configuration array for the provider.
      */
     public function __construct(array $config = [])
@@ -51,10 +54,9 @@ class GoogleProvider
 
     /**
      * Get the URL for authorization.
-     *
      * @return string Authorization URL.
      */
-    public function getAuthorizationUrl(): string
+    public function redirect()
     {
         $params = [
             'response_type' => 'code',
@@ -63,18 +65,26 @@ class GoogleProvider
             'scope'         => 'openid email profile',
         ];
 
-        return self::AUTHORIZE_URL . '?' . http_build_query($params);
+        $authorizeUrl = self::AUTHORIZE_URL . '?' . http_build_query($params);
+        // Redirects user to the authorization URL
+        $this->makeRedirect($authorizeUrl);
     }
 
     /**
      * Get the access token using the provided authorization code.
      *
-     * @param string $code Authorization code.
      * @return string Access token.
      * @throws \RuntimeException If unable to obtain access token.
      */
-    public function getAccessToken(string $code): string
+    public function getAccessToken()
     {
+        $code = $this->getCode();
+        if (empty($code)) {
+            return null;
+        } else {
+            app()->response->redirect('/home');
+        }
+
         $params = [
             'code'          => $code,
             'client_id'     => $this->config['client_id'],
@@ -83,10 +93,11 @@ class GoogleProvider
             'grant_type'    => 'authorization_code',
         ];
 
-        $response = $this->sendRequest(self::ACCESS_TOKEN_URL, 'POST', $params);
-
-        if (!isset($response['access_token'])) {
-            throw new \RuntimeException('Failed to obtain access token');
+        try {
+            $response = $this->sendRequest(self::ACCESS_TOKEN_URL, 'POST', $params);
+            app()->response->redirect('/home');
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Failed to obtain access token: ' . $e->getMessage());
         }
 
         return $response['access_token'];
@@ -101,46 +112,27 @@ class GoogleProvider
      */
     public function getUserInfo(string $access_token): object
     {
-        $headers  = ['Authorization: Bearer ' . $access_token];
-        $userInfo = $this->sendRequest(self::USER_INFO_URL, 'GET', [], $headers);
+        $headers = ['Authorization: Bearer ' . $access_token];
 
-        if (empty($userInfo)) {
-            throw new \RuntimeException('Failed to fetch user information');
+        try {
+            $userInfo = $this->sendRequest(self::USER_INFO_URL, 'GET', [], $headers);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Failed to fetch user information. ' . $e->getMessage());
         }
 
         return (object)$userInfo;
     }
 
     /**
-     * Send an HTTP request to the specified URL with the given method, data, and headers.
-     *
-     * @param string $url URL of the request.
-     * @param string $method HTTP method (e.g., GET, POST).
-     * @param array $data Data to be sent with the request.
-     * @param array $headers Headers for the request.
-     * @return array Response data.
-     * @throws \RuntimeException If the HTTP request fails.
+     * @param string $url
+     * 
+     * @return [type]
      */
-    private function sendRequest(string $url, string $method, array $data = [], array $headers = []): array
+    public function makeRedirect(string $url)
     {
-        $ch = curl_init($url);
-
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST  => $method,
-            CURLOPT_POSTFIELDS => ($method === 'POST') ? http_build_query($data) : null,
-            CURLOPT_HTTPHEADER => $headers,
-        ]);
-
-        $response = curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        curl_close($ch);
-
-        if ($statusCode >= 200 && $statusCode < 300) {
-            return json_decode($response, true);
+        if (!headers_sent()) {
+            app()->response->redirect($url);
+            exit;
         }
-
-        throw new \RuntimeException('HTTP Request Failed with status code: ' . $statusCode);
     }
 }
