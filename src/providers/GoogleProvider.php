@@ -2,15 +2,12 @@
 
 namespace Axm\Socialite\Providers;
 
-use Axm\Socialite\MakesHttpRequests;
 
 /**
  * GoogleProvider - A provider for Google OAuth2 authentication.
  */
 class GoogleProvider
 {
-    use MakesHttpRequests;
-
     /**
      * Base URL for Google API.
      */
@@ -24,7 +21,7 @@ class GoogleProvider
     /**
      * URL for obtaining access token.
      */
-    const ACCESS_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+    const ACCESS_TOKEN_URL = 'https://accounts.google.com/o/oauth2/token';
 
     /**
      * URL for fetching user information.
@@ -38,7 +35,6 @@ class GoogleProvider
 
     /**
      * Configuration array for the provider.
-     *
      * @var array
      */
     private $config;
@@ -66,7 +62,6 @@ class GoogleProvider
         ];
 
         $authorizeUrl = self::AUTHORIZE_URL . '?' . http_build_query($params);
-        // Redirects user to the authorization URL
         $this->makeRedirect($authorizeUrl);
     }
 
@@ -76,15 +71,35 @@ class GoogleProvider
      * @return string Access token.
      * @throws \RuntimeException If unable to obtain access token.
      */
-    public function getAccessToken()
+    public function user()
     {
         $code = $this->getCode();
-        if (empty($code)) {
-            return null;
-        } else {
-            app()->response->redirect('/home');
-        }
+        if (!empty($code)) {
+            try {
+                $params = $this->getParams($code);
 
+                $curl = new \Axm\Http\Curl();
+                $response = $curl->post(self::ACCESS_TOKEN_URL, $params);
+                $data = json_decode($response['response'], true);
+
+                $userInfoUrl = self::USER_INFO_URL . '?access_token=' . $data['access_token'];
+                $userInfoResponse = $curl->get($userInfoUrl);
+                $userInfo = json_decode($userInfoResponse['response'], true);
+
+                $curl->close();
+            } catch (\Throwable $e) {
+                throw new \RuntimeException('Failed to obtain access token: ' . $e->getMessage());
+            }
+
+            return (object)$userInfo;
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function getParams($code): array
+    {
         $params = [
             'code'          => $code,
             'client_id'     => $this->config['client_id'],
@@ -93,46 +108,29 @@ class GoogleProvider
             'grant_type'    => 'authorization_code',
         ];
 
-        try {
-            $response = $this->sendRequest(self::ACCESS_TOKEN_URL, 'POST', $params);
-            app()->response->redirect('/home');
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('Failed to obtain access token: ' . $e->getMessage());
-        }
-
-        return $response['access_token'];
+        return $params;
     }
 
     /**
-     * Get user information using the provided access token.
-     *
-     * @param string $access_token Access token.
-     * @return object User information.
-     * @throws \RuntimeException If unable to fetch user information.
+     * @return mixed
      */
-    public function getUserInfo(string $access_token): object
+    public function getCode()
     {
-        $headers = ['Authorization: Bearer ' . $access_token];
-
-        try {
-            $userInfo = $this->sendRequest(self::USER_INFO_URL, 'GET', [], $headers);
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('Failed to fetch user information. ' . $e->getMessage());
-        }
-
-        return (object)$userInfo;
+        return app()
+            ->request
+            ->get('code') ?? null;
     }
 
     /**
      * @param string $url
-     * 
      * @return [type]
      */
     public function makeRedirect(string $url)
     {
         if (!headers_sent()) {
-            app()->response->redirect($url);
-            exit;
+            app()
+                ->response
+                ->redirect($url);
         }
     }
 }
