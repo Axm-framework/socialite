@@ -4,46 +4,43 @@ namespace Axm\Socialite\Providers;
 
 use Axm\Http\Curl;
 
-/**
- * GoogleProvider - A provider for Google OAuth2 authentication.
- */
-class GoogleProvider
+class FacebookProvider
 {
     /**
-     * Base URL for Google API.
+     * @var string
      */
-    const API_BASE_URL = 'https://www.googleapis.com/';
+    const VERSION = 'v3.3';
+
+    /**
+     * Base URL for Facebook API.
+     */
+    const API_BASE_URL = 'https://graph.facebook.com';
 
     /**
      * URL for authorization.
      */
-    const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+    const AUTHORIZE_URL = 'https://www.facebook.com/' . self::VERSION . '/dialog/oauth';
 
     /**
      * URL for obtaining access token.
      */
-    const ACCESS_TOKEN_URL = 'https://accounts.google.com/o/oauth2/token';
+    const ACCESS_TOKEN_URL = self::API_BASE_URL . self::VERSION . '/oauth/access_token';
 
     /**
      * URL for fetching user information.
      */
-    const USER_INFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
+    const USER_INFO_URL = self::API_BASE_URL . self::VERSION . '/me';
 
     /**
-     * URL for Google API documentation.
+     * URL for Facebook API documentation.
      */
-    const API_DOCUMENTATION_URL = 'https://console.cloud.google.com/apis';
+    const API_DOCUMENTATION_URL = 'https://developers.facebook.com/docs/graph-api/overview';
 
     /**
-     * Configuration array for the provider.
      * @var array
      */
     private $config;
 
-    /**
-     * Constructor.
-     * @param array $config Configuration array for the provider.
-     */
     public function __construct(array $config = [])
     {
         $this->config = $config;
@@ -56,10 +53,10 @@ class GoogleProvider
     public function redirect()
     {
         $params = [
-            'response_type' => 'code',
             'client_id'     => $this->config['client_id'],
             'redirect_uri'  => $this->config['redirect_uri'],
-            'scope'         => 'openid email profile',
+            'scope'         => 'email', // Adjust the scope as needed
+            'response_type' => 'code',
         ];
 
         $authorizeUrl = self::AUTHORIZE_URL . '?' . http_build_query($params);
@@ -77,11 +74,10 @@ class GoogleProvider
         $code = $this->getCode();
         if (!empty($code)) {
             try {
-
                 $params = $this->getParams($code);
 
                 $curl = new Curl();
-                $response = $curl->post(self::ACCESS_TOKEN_URL, $params);
+                $response = $curl->get(self::ACCESS_TOKEN_URL . '?' . http_build_query($params));
                 $data = json_decode($response['response'], true);
 
                 $userInfoUrl = self::USER_INFO_URL . '?access_token=' . $data['access_token'];
@@ -102,15 +98,13 @@ class GoogleProvider
      */
     public function getParams($code): array
     {
-        $params = [
+        return [
             'code'          => $code,
             'client_id'     => $this->config['client_id'],
             'client_secret' => $this->config['client_secret'],
             'redirect_uri'  => $this->config['redirect_uri'],
             'grant_type'    => 'authorization_code',
         ];
-
-        return $params;
     }
 
     /**
@@ -129,9 +123,8 @@ class GoogleProvider
      */
     public function makeRedirect(string $url)
     {
-        if (!headers_sent())
-            app()
-                ->response
-                ->redirect($url);
+        if (!headers_sent()) {
+            app()->response->redirect($url);
+        }
     }
 }
