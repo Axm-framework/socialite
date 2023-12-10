@@ -19,7 +19,8 @@
 	"autoload": {
 		"psr-4": {
 			"Axm\\Socialite\\": "src",
-			"Axm\\Socialite\\Providers": "src/providers/"			
+			"Axm\\Socialite\\Providers": "src/providers/"
+
 		}
 	},
 
