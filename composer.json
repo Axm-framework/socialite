@@ -19,8 +19,7 @@
 	"autoload": {
 		"psr-4": {
 			"Axm\\Socialite\\": "src",
-			"Axm\\Socialite\\Providers": "src/providers/"
-
+			"Axm\\Socialite\\Providers\\": "src/providers/"
 		}
 	},
 
@@ -28,7 +27,7 @@
 	"prefer-stable": true,
 	"require": {
         "php": "^8.1",
-		"axm/framework": "*"
+		"axm/framework": "^1.0.7"
 	},
 	
     "require-dev": {
