@@ -27,7 +27,7 @@
 	"prefer-stable": true,
 	"require": {
         "php": "^8.1",
-		"axm/framework": "^1.0.7"
+		"axm/framework": "^1.0.9"
 	},
 	
     "require-dev": {
