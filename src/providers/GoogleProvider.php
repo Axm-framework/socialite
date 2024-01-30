@@ -77,7 +77,6 @@ class GoogleProvider
         $code = $this->getCode();
         if (!empty($code)) {
             try {
-
                 $params = $this->getParams($code);
 
                 $curl = new Curl();
@@ -98,6 +97,10 @@ class GoogleProvider
     }
 
     /**
+     * This method is used to retrieve the parameters required for the token request.
+     * It takes in a $code parameter which is the authorization code received from the authorization server.
+     *
+     * @param string $code The authorization code received from the authorization server
      * @return array
      */
     public function getParams($code): array
@@ -114,6 +117,7 @@ class GoogleProvider
     }
 
     /**
+     * Define a method to retrieve the 'code' parameter from the request
      * @return mixed
      */
     public function getCode()
@@ -124,10 +128,10 @@ class GoogleProvider
     }
 
     /**
-     * @param string $url
-     * @return [type]
+     * Perform a redirect to the given URL
+     * @param  string $url The redirect location
      */
-    public function makeRedirect(string $url)
+    protected function makeRedirect(string $url)
     {
         if (!headers_sent())
             app()

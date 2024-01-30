@@ -6,7 +6,7 @@ namespace Axm\Socialite;
 class Socialite
 {
     /**
-     * @var [type]
+     * @var object
      */
     private static $instance;
 
@@ -27,7 +27,7 @@ class Socialite
     }
 
     /**
-     * @return [type]
+     * Define a static method to get an instance of the class
      */
     public static function make()
     {
@@ -52,15 +52,17 @@ class Socialite
         $provider = sprintf('Axm\\Socialite\\Providers\\%sProvider', ucfirst($name));
 
         if (!class_exists($provider)) {
-            throw new \InvalidArgumentException("Provider $provider not supported.");
+            throw new \InvalidArgumentException(sprintf('Provider [ %s ] not supported.', $provider));
         }
 
         return new $provider($config);
     }
 
     /**
-     * @param string $provider
-     * @return [type]
+     * Return an instance of the specified provider's driver.
+     *
+     * @param string $provider The name of the provider to return the driver for.
+     * @return object The driver instance for the specified provider.
      */
     public static function driver(string $provider): object
     {
@@ -69,7 +71,8 @@ class Socialite
     }
 
     /**
-     * @return array
+     * Returns the configuration array for the specified provider.
+     * @return array The configuration array for the specified provider.
      */
     public function getProviderConfig(): array
     {
@@ -78,13 +81,16 @@ class Socialite
     }
 
     /**
-     * @return [type]
+     * Opens and returns the configuration array for the specified provider.
+     *
+     * @return array The configuration array for the specified provider.
+     * @throws \InvalidArgumentException If the configuration file does not exist.
      */
     public function openConfig(): array
     {
         $file = __DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php';
         if (!is_file($file)) {
-            throw new \InvalidArgumentException("The configuration file $file does not exist.");
+            throw new \InvalidArgumentException(sprintf('The configuration file [ %s ] does not exist.', $file));
         }
 
         $config = require($file);
