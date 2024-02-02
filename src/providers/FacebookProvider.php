@@ -123,8 +123,9 @@ class FacebookProvider
      */
     public function makeRedirect(string $url)
     {
-        if (!headers_sent()) {
-            app()->response->redirect($url);
-        }
+        if (!headers_sent())
+            app()
+                ->response
+                ->redirect($url);
     }
 }

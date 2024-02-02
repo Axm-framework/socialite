@@ -75,6 +75,7 @@ class GoogleProvider
     public function user()
     {
         $code = $this->getCode();
+
         if (!empty($code)) {
             try {
                 $params = $this->getParams($code);
@@ -82,7 +83,6 @@ class GoogleProvider
                 $curl = new Curl();
                 $response = $curl->post(self::ACCESS_TOKEN_URL, $params);
                 $data = json_decode($response['response'], true);
-
                 $userInfoUrl = self::USER_INFO_URL . '?access_token=' . $data['access_token'];
                 $userInfoResponse = $curl->get($userInfoUrl);
                 $userInfo = json_decode($userInfoResponse['response'], true);
