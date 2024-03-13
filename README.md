@@ -74,9 +74,9 @@ usage in your controller:
 
 namespace App\Raxm;
 
+use Views\View;
 use App\Models\User;
 use Axm\Raxm\Component;
-use Axm\Views\View;
 use Axm\Socialite\Socialite;
 
 

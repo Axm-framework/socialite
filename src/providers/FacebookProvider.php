@@ -2,7 +2,7 @@
 
 namespace Axm\Socialite\Providers;
 
-use Axm\Http\Curl;
+use Http\Curl;
 
 class FacebookProvider
 {
