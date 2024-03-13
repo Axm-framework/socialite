@@ -2,7 +2,7 @@
 
 namespace Axm\Socialite\Providers;
 
-use Axm\Http\Curl;
+use Http\Curl;
 
 /**
  * GoogleProvider - A provider for Google OAuth2 authentication.
